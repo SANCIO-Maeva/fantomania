@@ -4,8 +4,9 @@ kaboom({
 	
 })
 
-loadSprite("bean", "sprites/sprCC.png")
+loadSprite("player", "sprites/sprCC.png")
 loadSprite("steel", "sprites/brickCube.png")
+loadSprite("ghosty", "sprites/sprCC.png")
 
 /**
  * 
@@ -62,9 +63,6 @@ scene("start", () => {
 })
 
 
-
-
-
 /**
  * main game scene content
 */ 
@@ -74,6 +72,7 @@ scene("game", () => {
 const TILE_WIDTH = 64;
 const TILE_HEIGHT = TILE_WIDTH;
 const SPEED = 480;
+const ENEMY_SPEED = 160
 
 
 function createMazeMap(width, height) {
@@ -180,7 +179,7 @@ const level = addLevel(
 		tiles: {
 			"#": () => [
 				sprite("steel"),
-				tile({ isStatic: true }),
+				tile({ isObstacle: true }),
 			],
 		},
 	},
@@ -193,13 +192,36 @@ const level = addLevel(
  * Character spawning
  */
 
-const bean = add([
+const player = add([
     // list of components
-    sprite("bean"),
+    sprite("player"),
     pos(80, 40),
     area(),
     body(),
   ]);
+
+  const enemy = add([
+	sprite("ghosty"),
+	pos(width() - 80, height() - 80),
+	anchor("center"),
+	area(),
+	state("move"),
+	"enemy",
+])
+
+	// Like .onUpdate() which runs every frame, but only runs when the current state is "move"
+	// Here we move towards the player every frame if the current state is "move"
+	enemy.onStateUpdate("move", () => {
+		if (!player.exists()) return
+		const dir = player.pos.sub(enemy.pos).unit()
+		enemy.move(dir.scale(ENEMY_SPEED))
+	})
+
+	player.onCollide("enemy", () => {
+		destroy(player)
+		go("lose", score)
+	})
+
 
 
 
@@ -209,25 +231,42 @@ const bean = add([
  */
 
 onKeyDown("right", () => {
-    bean.move(SPEED, 0);
+    player.move(SPEED, 0);
   });
   onKeyDown("left", () => {
-    bean.move(-SPEED, 0);
+    player.move(-SPEED, 0);
   });
   onKeyDown("up", () => {
-    bean.move(0, -SPEED);
+    player.move(0, -SPEED);
   });
   onKeyDown("down", () => {
-    bean.move(0, SPEED);
+    player.move(0, SPEED);
   });
 
 // onClick(() => {
 // 	const pos = mousePos()
-// 	bean.setTarget(vec2(
+// 	player.setTarget(vec2(
 // 		Math.floor(pos.x / TILE_WIDTH) * TILE_WIDTH + TILE_WIDTH / 2,
 // 		Math.floor(pos.y / TILE_HEIGHT) * TILE_HEIGHT + TILE_HEIGHT / 2,
 // 	))
 // });
+
+
+  /**
+   * keep track of score
+   * */ 
+  let score = 0;
+
+  const scoreLabel = add([text(score), pos(24, 24)]);
+
+  /**
+   * increment score every frame
+   * */
+
+  onUpdate(() => {
+    score++;
+    scoreLabel.text = score;
+  });
 });
 
 
@@ -240,7 +279,7 @@ onKeyDown("right", () => {
 scene("lose", (score) => {
 
 	add([
-		sprite("bean"),
+		sprite("player"),
 		pos(width() / 2, height() / 2 - 108),
 		scale(3),
 		anchor("center"),
@@ -251,6 +290,12 @@ scene("lose", (score) => {
 		text(score),
 		pos(width() / 2, height() / 2 + 108),
 		scale(3),
+		anchor("center"),
+	])
+	add([
+		text('Press space to restart'),
+		pos(width() / 2, height() - 80 ),
+		scale(2),
 		anchor("center"),
 	])
 
@@ -267,5 +312,5 @@ scene("lose", (score) => {
  *start with the "game" scene 
  */ 
 
-go("start")
+go("lose")
 
