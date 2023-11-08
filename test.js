@@ -7,9 +7,11 @@ kaboom({
 loadSprite("player", "sprites/sprCC.png")
 loadSprite("steel", "sprites/brickCube.png")
 loadSprite("ghosty", "sprites/sprCC.png")
+loadSprite("gameOver", "sprites/brickCube.png")
+
 
 /**
- * 
+ * Start scene
  */
 
 scene("start", () => {
@@ -172,14 +174,15 @@ function createMazeLevelMap(width, height, options) {
  */
 
 const level = addLevel(
-	createMazeLevelMap(9, 9, {}),
+	createMazeLevelMap(11, 11, {}),
 	{
 		tileWidth: TILE_WIDTH,
 		tileHeight: TILE_HEIGHT,
 		tiles: {
 			"#": () => [
 				sprite("steel"),
-				tile({ isObstacle: true }),
+				area(),
+				body({ isStatic: true }),
 			],
 		},
 	},
@@ -200,14 +203,24 @@ const player = add([
     body(),
   ]);
 
-  const enemy = add([
-	sprite("ghosty"),
-	pos(width() - 80, height() - 80),
-	anchor("center"),
-	area(),
-	state("move"),
-	"enemy",
-])
+
+
+  for (let i = 0; i < 3; i++) {
+
+	// generate a random point on screen
+	// width() and height() gives the game dimension
+	const x = rand(0, width())
+	const y = rand(0, height())
+	
+	const enemy = add([
+		sprite("ghosty"),
+		pos(x, y),
+		anchor("center"),
+		area(),
+		state("move"),
+		"enemy",
+	]);
+
 
 	// Like .onUpdate() which runs every frame, but only runs when the current state is "move"
 	// Here we move towards the player every frame if the current state is "move"
@@ -221,7 +234,7 @@ const player = add([
 		destroy(player)
 		go("lose", score)
 	})
-
+}
 
 
 
@@ -243,13 +256,8 @@ onKeyDown("right", () => {
     player.move(0, SPEED);
   });
 
-// onClick(() => {
-// 	const pos = mousePos()
-// 	player.setTarget(vec2(
-// 		Math.floor(pos.x / TILE_WIDTH) * TILE_WIDTH + TILE_WIDTH / 2,
-// 		Math.floor(pos.y / TILE_HEIGHT) * TILE_HEIGHT + TILE_HEIGHT / 2,
-// 	))
-// });
+
+
 
 
   /**
@@ -279,7 +287,7 @@ onKeyDown("right", () => {
 scene("lose", (score) => {
 
 	add([
-		sprite("player"),
+		sprite("gameOver"),
 		pos(width() / 2, height() / 2 - 108),
 		scale(3),
 		anchor("center"),
@@ -312,5 +320,4 @@ scene("lose", (score) => {
  *start with the "game" scene 
  */ 
 
-go("lose")
-
+go("start")
