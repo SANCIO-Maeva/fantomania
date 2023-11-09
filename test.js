@@ -8,7 +8,7 @@ loadSprite("steel", "sprites/brickCube.png")
 loadSprite("ghost", "sprites/ghost-1.png")
 loadSprite("ghosty", "sprites/ghost-2.png")
 loadSprite("gameOver", "sprites/game-over.png")
-loadSprite("portal", "/sprites/portal.png")
+loadSprite("portal", "sprites/portal.png")
 loadSprite("winner", "sprites/win.png")
 loadSprite("player", "sprites/pac-open-close.png", {
 	sliceX: 2, // Nombre de tranches horizontales (2 pour open et close)
@@ -31,6 +31,13 @@ loadSprite("player", "sprites/pac-open-close.png", {
  */
 
 scene("start", () => {
+
+	add([
+		text('Welcome to the Maze'),
+		pos(width() / 2, height() / 6),
+		scale(2),
+		anchor("center"),
+	])
 
 	function addButton(txt, p, f) {
 
@@ -90,7 +97,7 @@ scene("game", () => {
 const TILE_WIDTH = 64;
 const TILE_HEIGHT = 64;
 const SPEED = 480;
-const ENEMY_SPEED = 0;
+const ENEMY_SPEED = 160;
 
 
 
@@ -100,13 +107,13 @@ const ENEMY_SPEED = 0;
 
 const level = addLevel([
 	// Design the level layout with symbols
-	"====================",
-	"====================",
-	"====================",
-	"====================",
-	"====================",
-	"====================",
-	"==================>=",
+	"= =========== ======",
+	"= ===== =====    ===",
+	"= ===== ============",
+	"=       ============",
+	"======= ==    ======",
+	"======= == == ======",
+	"=======    ==     >=",
 	"====================",
 ], {
 		tileWidth: TILE_WIDTH,
@@ -122,7 +129,6 @@ const level = addLevel([
 				sprite("portal"),
 				area(),
 				scale(0.1),
-				// anchor("bot"),
 				"portal",
 			],
 		},
@@ -161,7 +167,6 @@ const player = add([
 		scale(0.1),
 		anchor("center"),
 		area(),
-		body(),
 		state("move"),
 		"enemy",
 	]);
@@ -197,7 +202,6 @@ for (let i = 0; i < 2; i++) {
 		scale(0.1),
 		anchor("center"),
 		area(),
-		body(),
 		state("move"),
 		"enemy2",
 	]);
@@ -250,6 +254,11 @@ onKeyDown("right", () => {
   });
 });
 
+
+/**
+ * win scene
+ * */ 
+
 scene("win", (score) => {
 
 	add([
@@ -279,7 +288,7 @@ scene("win", (score) => {
 
 
 /**
- *game over scene
+ * game over scene
  * */ 
 
 scene("lose", (score) => {
