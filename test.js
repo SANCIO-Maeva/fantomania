@@ -1,13 +1,29 @@
 kaboom({
 	scale: 1,
-	background: [0, 0, 0],
+	background: [228, 182, 251],
 	
 })
 
-loadSprite("player", "sprites/sprCC.png")
 loadSprite("steel", "sprites/brickCube.png")
-loadSprite("ghosty", "sprites/sprCC.png")
-loadSprite("gameOver", "sprites/brickCube.png")
+loadSprite("ghost", "sprites/ghost-1.png")
+loadSprite("ghosty", "sprites/ghost-2.png")
+loadSprite("gameOver", "sprites/game-over.png")
+loadSprite("portal", "/sprites/portal.png")
+loadSprite("winner", "sprites/win.png")
+loadSprite("player", "sprites/pac-open-close.png", {
+	sliceX: 2, // Nombre de tranches horizontales (2 pour open et close)
+	anims: {
+	  open: {
+		from: 0,
+		to: 0, // Première tranche pour l'état "open"
+	  },
+	  close: {
+		from: 1,
+		to: 1, // Deuxième tranche pour l'état "close"
+	  },
+	},
+  });
+
 
 
 /**
@@ -72,100 +88,9 @@ scene("start", () => {
 scene("game", () => {
 	
 const TILE_WIDTH = 64;
-const TILE_HEIGHT = TILE_WIDTH;
+const TILE_HEIGHT = 64;
 const SPEED = 480;
-const ENEMY_SPEED = 160
-
-
-function createMazeMap(width, height) {
-	const size = width * height;
-	function getUnvisitedNeighbours(map, index) {
-		const n = []
-		const x = Math.floor(index / width)
-		if (x > 1 && map[index - 2] === 2) n.push(index - 2)
-		if (x < width - 2 && map[index + 2] === 2) n.push(index + 2)
-		if (index >= 2 * width && map[index - 2 * width] === 2) n.push(index - 2 * width)
-		if (index < size - 2 * width && map[index + 2 * width] === 2) n.push(index + 2 * width)
-		return n
-	}
-	const map = new Array(size).fill(1, 0, size)
-	map.forEach((_, index) => {
-		const x = Math.floor(index / width)
-		const y = Math.floor(index % width)
-		if ((x & 1) === 1 && (y & 1) === 1) {
-			map[index] = 2
-		}
-	})
-
-	const stack = [];
-	const startX = Math.floor(Math.random() * (width - 1)) | 1;
-	const startY = Math.floor(Math.random() * (height - 1)) | 1;
-	const start = startX + startY * width;
-	map[start] = 0;
-	stack.push(start);
-	while (stack.length) {
-		const index = stack.pop();
-		const neighbours = getUnvisitedNeighbours(map, index);
-		if (neighbours.length > 0) {
-			stack.push(index)
-			const neighbour = neighbours[Math.floor(neighbours.length * Math.random())];
-			const between = (index + neighbour) / 2;
-			map[neighbour] = 0;
-			map[between] = 0;
-			stack.push(neighbour);
-		}
-	}
-	return map;
-}
-
-
-
-
-/**
- * Creates level map
- */
-
-function createMazeLevelMap(width, height, options) {
-	const symbols = options?.symbols || {};
-	const map = createMazeMap(width, height);
-	const space = symbols[" "] || " ";
-	const fence = symbols["#"] || "#";
-	const detail = [
-		space,
-		symbols["╸"] || "╸",   //  1
-		symbols["╹"] || "╹",   //  2
-		symbols["┛"] || "┛",   //  3
-		symbols["╺"] || "╺",   //  4
-		symbols["━"] || "━",   //  5
-		symbols["┗"] || "┗",   //  6
-		symbols["┻"] || "┻",   //  7
-		symbols["╻"] || "╻",   //  8
-		symbols["┓"] || "┓",   //  9
-		symbols["┃"] || "┃",   //  a
-		symbols["┫"] || "┫",   //  b
-		symbols["┏"] || "┏",   //  c
-		symbols["┳"] || "┳",   //  d
-		symbols["┣"] || "┣",   //  e
-		symbols["╋ "] || "╋ ", //  f
-	]
-	const symbolMap = options?.detailed ? map.map((s, index) => {
-		if (s === 0) return space
-		const x = Math.floor(index % width)
-		const leftWall = x > 0 && map[index - 1] == 1 ? 1 : 0
-		const rightWall = x < width - 1 && map[index + 1] == 1 ? 4 : 0
-		const topWall = index >= width && map[index - width] == 1 ? 2 : 0
-		const bottomWall = index < height * width - width && map[index + width] == 1 ? 8 : 0
-		return detail[leftWall | rightWall | topWall | bottomWall];
-	}) : map.map((s) => {
-		return s == 1 ? fence : space;
-	})
-	const levelMap = []
-	for (let i = 0; i < height; i++) {
-		levelMap.push(symbolMap.slice(i * width, i * width + width).join(""))
-	}
-	return levelMap;
-}
-
+const ENEMY_SPEED = 0;
 
 
 
@@ -173,21 +98,36 @@ function createMazeLevelMap(width, height, options) {
  *  Creates a maze level.
  */
 
-const level = addLevel(
-	createMazeLevelMap(11, 11, {}),
-	{
+const level = addLevel([
+	// Design the level layout with symbols
+	"====================",
+	"====================",
+	"====================",
+	"====================",
+	"====================",
+	"====================",
+	"==================>=",
+	"====================",
+], {
 		tileWidth: TILE_WIDTH,
-		tileHeight: TILE_HEIGHT,
+		tileHeight: TILE_WIDTH,
+		pos: vec2(100, 200),
 		tiles: {
-			"#": () => [
+			"=": () => [
 				sprite("steel"),
 				area(),
 				body({ isStatic: true }),
 			],
+			">": () => [
+				sprite("portal"),
+				area(),
+				scale(0.1),
+				// anchor("bot"),
+				"portal",
+			],
 		},
 	},
 )
-
 
 
 
@@ -198,14 +138,17 @@ const level = addLevel(
 const player = add([
     // list of components
     sprite("player"),
+	scale(0.15),
     pos(80, 40),
     area(),
     body(),
   ]);
 
+  player.play("open", { loop: true, speed: 0.1 });
+  player.play("open", { loop: true, speed: 0.1 });
+  
 
-
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 2; i++) {
 
 	// generate a random point on screen
 	// width() and height() gives the game dimension
@@ -215,12 +158,13 @@ const player = add([
 	const enemy = add([
 		sprite("ghosty"),
 		pos(x, y),
+		scale(0.1),
 		anchor("center"),
 		area(),
+		body(),
 		state("move"),
 		"enemy",
 	]);
-
 
 	// Like .onUpdate() which runs every frame, but only runs when the current state is "move"
 	// Here we move towards the player every frame if the current state is "move"
@@ -236,7 +180,39 @@ const player = add([
 	})
 }
 
+player.onCollide("portal", () => {
+	go("win", score)
+})
 
+for (let i = 0; i < 2; i++) {
+
+	// generate a random point on screen
+	// width() and height() gives the game dimension
+	const x = rand(0, width())
+	const y = rand(0, height())
+	
+	const enemy2 = add([
+		sprite("ghost"),
+		pos(x, y),
+		scale(0.1),
+		anchor("center"),
+		area(),
+		body(),
+		state("move"),
+		"enemy2",
+	]);
+
+	enemy2.onStateUpdate("move", () => {
+		if (!player.exists()) return
+		const dir2 = player.pos.sub(enemy2.pos).unit()
+		enemy2.move(dir2.scale(ENEMY_SPEED))
+	})
+
+	player.onCollide("enemy2", () => {
+		destroy(player)
+		go("lose", score)
+	})
+}
 
 
 /**
@@ -257,15 +233,12 @@ onKeyDown("right", () => {
   });
 
 
-
-
-
   /**
    * keep track of score
    * */ 
   let score = 0;
 
-  const scoreLabel = add([text(score), pos(24, 24)]);
+  const scoreLabel = add([text(score), pos(width() / 2, 24)]);
 
   /**
    * increment score every frame
@@ -277,27 +250,18 @@ onKeyDown("right", () => {
   });
 });
 
-
-
-
-/**
- *game over scene
- * */ 
-
-scene("lose", (score) => {
+scene("win", (score) => {
 
 	add([
-		sprite("gameOver"),
-		pos(width() / 2, height() / 2 - 108),
-		scale(3),
+		sprite("winner"),
+		pos(width() / 2, height() / 2 - 70),
 		anchor("center"),
 	])
-
 	// display score
 	add([
 		text(score),
-		pos(width() / 2, height() / 2 + 108),
-		scale(3),
+		pos(80, 30),
+		scale(1.5),
 		anchor("center"),
 	])
 	add([
@@ -314,6 +278,38 @@ scene("lose", (score) => {
 })
 
 
+/**
+ *game over scene
+ * */ 
+
+scene("lose", (score) => {
+
+
+	add([
+		sprite("gameOver"),
+		pos(width() / 2, height() / 2 - 60),
+		anchor("center"),
+	])
+
+	// display score
+	add([
+		text(score),
+		pos(80, 30),
+		scale(1.5),
+		anchor("center"),
+	])
+	add([
+		text('Press space to restart'),
+		pos(width() / 2, height() - 80 ),
+		scale(2),
+		anchor("center"),
+	])
+
+	// go back to game with space is pressed
+	onKeyPress("space", () => go("start"))
+	onClick(() => go("start"))
+
+})
 
 
 /**
