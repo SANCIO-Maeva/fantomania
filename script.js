@@ -1,5 +1,5 @@
 function getSceneById(id) {
-  let url = "methods/getScene.php?id="+id;
+  let url = "config/getScene.php?id="+id;
   fetch(url, {method:"GET"})
     .then((response) => {
       //before parsing (i.e. decoding) the JSON data
@@ -27,7 +27,7 @@ function getSceneById(id) {
 getSceneById();
 
 function getElementById(id) {
-  let url = "methods/getElement.php?id="+id;
+  let url = "config/getElement.php?id="+id;
   fetch(url, {method:"GET"})
     .then((response) => {
       //before parsing (i.e. decoding) the JSON data
@@ -55,7 +55,7 @@ function getElementById(id) {
 getElementById();
 
 function getGhostById(id) {
-  let url = "methods/getGhost.php?id="+id;
+  let url = "config/getGhost.php?id="+id;
   fetch(url, {method:"GET"})
     .then((response) => {
       //before parsing (i.e. decoding) the JSON data
@@ -83,7 +83,7 @@ function getGhostById(id) {
 getGhostById();
 
 function getPlayersById(id) {
-  let url = "methods/getPlayers.php?id="+id;
+  let url = "config/getPlayers.php?id="+id;
   fetch(url, {method:"GET"})
     .then((response) => {
       //before parsing (i.e. decoding) the JSON data
