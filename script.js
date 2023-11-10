@@ -125,15 +125,15 @@ loadSprite("fairy", "sprites/background.png");
 loadSprite("fairy-playground", "sprites/background2.png");
 loadSprite("player", "sprites/pac-open-close.png", 
 {
-  sliceX: 2, // Nombre de tranches horizontales (2 pour open et close)
+  sliceX: 2, 
   anims: {
     open: {
       from: 0,
-      to: 0, // Première tranche pour l'état "open"
+      to: 0,
     },
     close: {
       from: 1,
-      to: 1, // Deuxième tranche pour l'état "close"
+      to: 1, 
     },
   },
 }
@@ -272,8 +272,8 @@ scene("game",  ({ levelId, coins, score } = { levelId: 0, coins: 0 , score: 0 })
     body(),
   ]);
 
-  player.play("open", { loop: true, speed: 0.1 });
-  player.play("close", { loop: true, speed: 0.1 });
+  // player.play("open", { loop: true, speed: 0.1 });
+  // player.play("close", { loop: true, speed: 0.1 });
 
   for (let i = 0; i < 2; i++) {
     // generate a random point on screen
