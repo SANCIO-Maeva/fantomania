@@ -18,7 +18,7 @@ try{
 
 if (isset($_GET["id"])){
     $ghostId = $_GET["id"];
-    $request = $pdo->prepare('SELECT * FROM test');
+    $request = $pdo->prepare('SELECT * FROM ghost');
     // $request->bindParam('ghostyId', $ghostId, PDO::PARAM_STR);
     
     $ghost = $request->execute();
@@ -28,10 +28,4 @@ if (isset($_GET["id"])){
 
 echo json_encode($ghost);
 
-
-// $request = $pdo->query('SELECT name FROM test WHERE id = 1');
-// $ghost = $request->fetch(PDO::FETCH_ASSOC);
-
-// // echo'ghost Name:' . $ghost['name'];
-// echo json_encode($ghost['name']);
 ?>

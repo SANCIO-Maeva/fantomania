@@ -1,7 +1,5 @@
-let ghostData = "";
-
 function getGhostById(id) {
-  let url = "getGhostName.php?id="+id;
+  let url = "methods/getGhost.php?id="+id;
   fetch(url, {method:"GET"})
     .then((response) => {
       //before parsing (i.e. decoding) the JSON data
@@ -16,17 +14,71 @@ function getGhostById(id) {
     .then((data) => {
       //this is where you handle what to do with the response
       console.log(data);
-      ghostData = data[1];
-      ghostyData = data[0];
+      ghostData = data[0];
+      ghostyData = data[1];
+      gameOver = data[2];
+
       return data;
     })
     .catch((error) => {
       //this is where handle errors
     });
 }
+getGhostById();
 
-getGhostById(1);
-getGhostById(2);
+function getElementById(id) {
+  let url = "methods/getElement.php?id="+id;
+  fetch(url, {method:"GET"})
+    .then((response) => {
+      //before parsing (i.e. decoding) the JSON data
+      if (!response.ok) {
+        //check for any errors
+        //in case of an error, throw.
+        throw new Error("something went wrong!");
+      }
+      let parsedResponse = response.json();
+      return parsedResponse; //parse the json data
+    })
+    .then((data) => {
+      //this is where you handle what to do with the response
+      console.log(data);
+      coin = data[0];
+      steel = data[1];
+      portal = data[2];
+
+      return data;
+    })
+    .catch((error) => {
+      //this is where handle errors
+    });
+}
+getElementById();
+
+function getPlayersById(id) {
+  let url = "methods/getPlayers.php?id="+id;
+  fetch(url, {method:"GET"})
+    .then((response) => {
+      //before parsing (i.e. decoding) the JSON data
+      if (!response.ok) {
+        //check for any errors
+        //in case of an error, throw.
+        throw new Error("something went wrong!");
+      }
+      let parsedResponse = response.json();
+      return parsedResponse; //parse the json data
+    })
+    .then((data) => {
+      //this is where you handle what to do with the response
+      console.log(data);
+      players = data[0];
+
+      return data;
+    })
+    .catch((error) => {
+      //this is where handle errors
+    });
+}
+getPlayersById();
 
 
 kaboom({
@@ -41,7 +93,8 @@ loadSprite("gameOver", "sprites/game-over.png");
 loadSprite("portal", "sprites/portal.png");
 loadSprite("winner", "sprites/win.png");
 loadSprite("coin", "sprites/coin.png");
-loadSprite("player", "sprites/pac-open-close.png", {
+loadSprite("player", "sprites/pac-open-close.png", 
+{
   sliceX: 2, // Nombre de tranches horizontales (2 pour open et close)
   anims: {
     open: {
@@ -53,7 +106,8 @@ loadSprite("player", "sprites/pac-open-close.png", {
       to: 1, // Deuxième tranche pour l'état "close"
     },
   },
-});
+}
+);
 
 
 /**
@@ -113,20 +167,19 @@ scene("start", () => {
  * main game scene content
  */
 
-scene("game", () => {
+scene("game",  ({ levelId, coins } = { levelId: 0, coins: 0 }) => {
   const TILE_WIDTH = 64;
   const TILE_HEIGHT = 64;
-  const SPEED = 480;
-  const ENEMY_SPEED = 160;
 
   /**
    *  Creates a maze level.
    */
 
-  const level = addLevel(
+  const LEVELS = [
     [
       // Design the level layout with symbols
-      "= =========== ======",
+      "= ======= === ======",
+      "= ======= === ======",
       "=$= ===$$$===   $===",
       "=$= ===$========$===",
       "=$$$  $ ========$$$ ",
@@ -135,21 +188,34 @@ scene("game", () => {
       "=$$====$$$$==$$$$$>=",
       "====================",
     ],
-    {
-      tileWidth: TILE_WIDTH,
+    [
+      // Design the level layout with symbols
+      "= ======= === ======",
+      "=$= ===$$$===   $===",
+      "=$= ===$========$===",
+      "=$$$  $ ========$$$ ",
+      "==$====$==$$$$==$===",
+      "==$====$==$==$   ===",
+      "=$$====$$$$==$$$$$>=",
+      "====== = ====== ====",
+    ],
+
+  ];
+
+  const levelConf = {
+      tileWidth: TILE_WIDTH,  
       tileHeight: TILE_WIDTH,
       pos: vec2(100, 200),
       tiles: {
-        "=": () => [sprite("steel"), area(), body({ isStatic: true })],
-        ">": () => [sprite("portal"), area(), scale(0.1), "portal"],
-        $: () => [sprite("coin"), area(), "coin"],
+        "=": () => [sprite(steel.name), area(), body({ isStatic: true })],
+        ">": () => [sprite(portal.name), area(), scale(0.1), portal.name],
+        "$": () => [sprite(coin.name), area(), scale(0.1), coin.name],
       },
-    }
-  );
-
+    };
   /**
    * Character spawning
    */
+	const level = addLevel(LEVELS[levelId ?? 0], levelConf)
 
   const player = add([
     // list of components
@@ -161,7 +227,7 @@ scene("game", () => {
   ]);
 
   player.play("open", { loop: true, speed: 0.1 });
-  player.play("open", { loop: true, speed: 0.1 });
+  player.play("close", { loop: true, speed: 0.1 });
 
   for (let i = 0; i < 2; i++) {
     // generate a random point on screen
@@ -184,7 +250,7 @@ scene("game", () => {
     enemy.onStateUpdate("move", () => {
       if (!player.exists()) return;
       const dir = player.pos.sub(enemy.pos).unit();
-      enemy.move(dir.scale(ENEMY_SPEED));
+      enemy.move(dir.scale(ghostyData.speed));
     });
 
     player.onCollide("enemy", () => {
@@ -193,8 +259,15 @@ scene("game", () => {
     });
   }
 
-  player.onCollide("portal", () => {
-    go("win", score);
+  player.onCollide(portal.name, () => {
+		if (levelId + 1 < LEVELS.length) {
+			go("game", {
+				levelId: levelId + 1,
+				coins: coins,
+			})
+		} else {
+			go("win", score)
+		}
   });
 
   for (let i = 0; i < 2; i++) {
@@ -216,7 +289,7 @@ scene("game", () => {
     enemy2.onStateUpdate("move", () => {
       if (!player.exists()) return;
       const dir2 = player.pos.sub(enemy2.pos).unit();
-      enemy2.move(dir2.scale(ENEMY_SPEED));
+      enemy2.move(dir2.scale(ghostData.speed));
     });
 
     player.onCollide("enemy2", () => {
@@ -230,16 +303,16 @@ scene("game", () => {
    */
 
   onKeyDown("right", () => {
-    player.move(SPEED, 0);
+    player.move(players.speed, 0);
   });
   onKeyDown("left", () => {
-    player.move(-SPEED, 0);
+    player.move(-players.speed, 0);
   });
   onKeyDown("up", () => {
-    player.move(0, -SPEED);
+    player.move(0, -players.speed);
   });
   onKeyDown("down", () => {
-    player.move(0, SPEED);
+    player.move(0, players.speed);
   });
 
   /**
@@ -248,7 +321,7 @@ scene("game", () => {
   let score = 0;
 
   const scoreLabel = add([text(score), pos(width() / 2, 24)]);
-  player.onCollide("coin", (coin) => {
+  player.onCollide(coin.name, (coin) => {
     destroy(coin);
     score++;
     scoreLabel.text = score;
@@ -289,7 +362,7 @@ scene("win", (score) => {
 
 scene("lose", (score) => {
   add([
-    sprite("gameOver"),
+    sprite(gameOver.name),
     pos(width() / 2, height() / 2 - 60),
     anchor("center"),
   ]);
