@@ -1,5 +1,5 @@
-function getGhostById(id) {
-  let url = "methods/getGhost.php?id="+id;
+function getSceneById(id) {
+  let url = "methods/getScene.php?id="+id;
   fetch(url, {method:"GET"})
     .then((response) => {
       //before parsing (i.e. decoding) the JSON data
@@ -13,10 +13,10 @@ function getGhostById(id) {
     })
     .then((data) => {
       //this is where you handle what to do with the response
-      console.log(data);
-      ghostData = data[0];
-      ghostyData = data[1];
-      gameOver = data[2];
+      // console.log(data);
+      fairy = data[0];
+      fairyPlayground = data[1];
+
 
       return data;
     })
@@ -24,7 +24,7 @@ function getGhostById(id) {
       //this is where handle errors
     });
 }
-getGhostById();
+getSceneById();
 
 function getElementById(id) {
   let url = "methods/getElement.php?id="+id;
@@ -41,7 +41,7 @@ function getElementById(id) {
     })
     .then((data) => {
       //this is where you handle what to do with the response
-      console.log(data);
+      // console.log(data);
       coin = data[0];
       steel = data[1];
       portal = data[2];
@@ -53,6 +53,34 @@ function getElementById(id) {
     });
 }
 getElementById();
+
+function getGhostById(id) {
+  let url = "methods/getGhost.php?id="+id;
+  fetch(url, {method:"GET"})
+    .then((response) => {
+      //before parsing (i.e. decoding) the JSON data
+      if (!response.ok) {
+        //check for any errors
+        //in case of an error, throw.
+        throw new Error("something went wrong!");
+      }
+      let parsedResponse = response.json();
+      return parsedResponse; //parse the json data
+    })
+    .then((data) => {
+      //this is where you handle what to do with the response
+      // console.log(data);
+      ghostData = data[0];
+      ghostyData = data[1];
+      gameOver = data[2];
+
+      return data;
+    })
+    .catch((error) => {
+      //this is where handle errors
+    });
+}
+getGhostById();
 
 function getPlayersById(id) {
   let url = "methods/getPlayers.php?id="+id;
@@ -69,7 +97,7 @@ function getPlayersById(id) {
     })
     .then((data) => {
       //this is where you handle what to do with the response
-      console.log(data);
+      // console.log(data);
       players = data[0];
 
       return data;
@@ -93,6 +121,8 @@ loadSprite("gameOver", "sprites/game-over.png");
 loadSprite("portal", "sprites/portal.png");
 loadSprite("winner", "sprites/win.png");
 loadSprite("coin", "sprites/coin.png");
+loadSprite("fairy", "sprites/background.png");
+loadSprite("fairy-playground", "sprites/background2.png");
 loadSprite("player", "sprites/pac-open-close.png", 
 {
   sliceX: 2, // Nombre de tranches horizontales (2 pour open et close)
@@ -110,11 +140,20 @@ loadSprite("player", "sprites/pac-open-close.png",
 );
 
 
+
 /**
  * Start scene
  */
 
 scene("start", () => {
+  add([
+    // list of components
+    sprite("fairy"),
+    scale(0.77),
+    pos(0, 0),
+
+  ]);
+
   add([
     text("Welcome to the Maze"),
     pos(width() / 2, height() / 6),
@@ -167,7 +206,14 @@ scene("start", () => {
  * main game scene content
  */
 
-scene("game",  ({ levelId, coins } = { levelId: 0, coins: 0 }) => {
+scene("game",  ({ levelId, coins, score } = { levelId: 0, coins: 0 , score: 0 }) => {
+  add([
+    // list of components
+    sprite(fairyPlayground.name),
+    scale(fairyPlayground.scale),
+    pos(0, 0),
+
+  ]);
   const TILE_WIDTH = 64;
   const TILE_HEIGHT = 64;
 
@@ -179,25 +225,25 @@ scene("game",  ({ levelId, coins } = { levelId: 0, coins: 0 }) => {
     [
       // Design the level layout with symbols
       "= ======= === ======",
-      "= ======= === ======",
-      "=$= ===$$$===   $===",
-      "=$= ===$========$===",
-      "=$$$  $ ========$$$ ",
-      "==$====$==$$$$==$===",
-      "==$====$==$==$======",
-      "=$$====$$$$==$$$$$>=",
-      "====================",
-    ],
-    [
-      // Design the level layout with symbols
-      "= ======= === ======",
-      "=$= ===$$$===   $===",
-      "=$= ===$========$===",
-      "=$$$  $ ========$$$ ",
+      "=$=$===$$$===$$$$===",
+      "=$=$===$========$===",
+      "=$$$  $$========$$$ ",
       "==$====$==$$$$==$===",
       "==$====$==$==$   ===",
       "=$$====$$$$==$$$$$>=",
       "====== = ====== ====",
+    ],
+    [
+      // Design the level layout with symbols
+      "======== ===========",
+      "   $=$$$ ===$$$$====",
+      "===$======== == ====",
+      "===$====  >===$$$=$=",
+      "  =$   = ===== = =$=",
+      "=$=$== =$$$$$$$= = =",
+      "=$=$== ========= =  ",
+      "===$ =$$$$$$$$$$$===",
+      "====================",
     ],
 
   ];
@@ -209,7 +255,7 @@ scene("game",  ({ levelId, coins } = { levelId: 0, coins: 0 }) => {
       tiles: {
         "=": () => [sprite(steel.name), area(), body({ isStatic: true })],
         ">": () => [sprite(portal.name), area(), scale(0.1), portal.name],
-        "$": () => [sprite(coin.name), area(), scale(0.1), coin.name],
+        "$": () => [sprite(coin.name), area(), scale(0.07), coin.name],
       },
     };
   /**
@@ -219,7 +265,7 @@ scene("game",  ({ levelId, coins } = { levelId: 0, coins: 0 }) => {
 
   const player = add([
     // list of components
-    sprite("player"),
+    sprite(players.name),
     scale(0.15),
     pos(80, 40),
     area(),
@@ -263,11 +309,18 @@ scene("game",  ({ levelId, coins } = { levelId: 0, coins: 0 }) => {
 		if (levelId + 1 < LEVELS.length) {
 			go("game", {
 				levelId: levelId + 1,
-				coins: coins,
+				score: score,
+        levelLabel : levelLabel + levelId,
 			})
 		} else {
 			go("win", score)
 		}
+  });
+
+  player.onCollide(coin.name, (coin) => {
+    destroy(coin);
+    score++;
+    scoreLabel.text = score;
   });
 
   for (let i = 0; i < 2; i++) {
@@ -318,14 +371,8 @@ scene("game",  ({ levelId, coins } = { levelId: 0, coins: 0 }) => {
   /**
    * keep track of score
    * */
-  let score = 0;
-
-  const scoreLabel = add([text(score), pos(width() / 2, 24)]);
-  player.onCollide(coin.name, (coin) => {
-    destroy(coin);
-    score++;
-    scoreLabel.text = score;
-  });
+  const levelLabel = add([text("Level: " + levelId), pos(width() / 2, 24)]);
+  const scoreLabel = add([text("Score: " + score), pos(width() / 2, 70)]);
 
   /**
    * increment score every frame
@@ -338,12 +385,19 @@ scene("game",  ({ levelId, coins } = { levelId: 0, coins: 0 }) => {
 
 scene("win", (score) => {
   add([
+    // list of components
+    sprite(fairy.name),
+    scale(fairy.scale),
+    pos(0, 0),
+
+  ]);
+  add([
     sprite("winner"),
     pos(width() / 2, height() / 2 - 70),
     anchor("center"),
   ]);
   // display score
-  add([text(score), pos(80, 30), scale(1.5), anchor("center")]);
+  add([text("Score: " + score), pos(250, 30), scale(1.5), anchor("center")]);
   add([
     text("Press space to restart"),
     pos(width() / 2, height() - 80),
@@ -362,13 +416,20 @@ scene("win", (score) => {
 
 scene("lose", (score) => {
   add([
+    // list of components
+    sprite(fairy.name),
+    scale(fairy.scale),
+    pos(0, 0),
+
+  ]);
+  add([
     sprite(gameOver.name),
     pos(width() / 2, height() / 2 - 60),
     anchor("center"),
   ]);
 
   // display score
-  add([text(score), pos(80, 30), scale(1.5), anchor("center")]);
+  add([text("Score: " + score), pos(250, 30), scale(1.5), anchor("center")]);
   add([
     text("Press space to restart"),
     pos(width() / 2, height() - 80),
