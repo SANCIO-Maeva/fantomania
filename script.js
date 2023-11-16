@@ -357,9 +357,11 @@ scene("game",  ({ levelId, coins, score } = { levelId: 0, coins: 0 , score: 0 })
 
   onKeyDown("right", () => {
     player.move(players.speed, 0);
+    player.play("open", { loop: true, speed: 0.1 });
   });
   onKeyDown("left", () => {
     player.move(-players.speed, 0);
+    player.play("close", { loop: true, speed: 0.1 });
   });
   onKeyDown("up", () => {
     player.move(0, -players.speed);
